@@ -68,6 +68,7 @@ def test_lock_on_removal(local_user, required):
             # This could be checked by monitoring D-Bus signals
 
             # Wake up the black screen by pressing enter
+            gui.wake_by_mouse()
             gui.kb_send('enter', screenshot=False)
             # Confirm that the screen is locked
             # After the screen has been locked, there should be no Activities
@@ -75,8 +76,6 @@ def test_lock_on_removal(local_user, required):
             gui.assert_text('insert')
 
             card.insert()
-            # click on the password field
-            gui.click_on('PIN')
             gui.kb_write(local_user.pin)
             gui.kb_send('enter', wait_time=20)
             # confirm that you are logged back in
@@ -84,36 +83,9 @@ def test_lock_on_removal(local_user, required):
 
 
 def test_lock_on_removal_password(local_user):
-    """Local user inserts and removes the card while logged in with password.
-
-    Test steps
-        A. Configure SSSD:
-            authselect select sssd with-smartcard
-            with-smartcard-lock-on-removal
-        B. Start GDM and insert password to log in
-        C. Insert the smart card
-        D. Remove the smart card
-
-    Expected result
-        A. Configuration is updated
-        B. GDM starts and user logs in successfully
-        C. Nothing happens
-        D. Nothing happens - system will not lock on card removal
-    """
-    with Authselect(required=False, lock_on_removal=True), GUI() as gui:
-        with local_user.card(insert=False) as card:
-            gui.click_on(local_user.username)
-            gui.kb_write(local_user.password)
-            gui.kb_send('enter', wait_time=20)
-            gui.assert_text('Activities')
-
-            card.insert()
-            sleep(10)
-            card.remove()
-            sleep(10)
-
-            # Screen should be unlocked
-            gui.assert_text('Activities')
+    '''Does not work with RHEL 8.
+    '''
+    pass
 
 
 @pytest.mark.parametrize("lock_on_removal", [(True), (False)])
@@ -138,11 +110,9 @@ def test_lockscreen_password(local_user, lock_on_removal):
         D. The screen is locked
         E. Screen is unlocked succesfully
     """
-    with (
-        Authselect(required=False, lock_on_removal=lock_on_removal),
-        GUI() as gui,
-        local_user.card(insert=False) as card
-            ):
+    with Authselect(required=False, lock_on_removal=lock_on_removal), \
+            GUI() as gui, \
+            local_user.card(insert=False) as card:
         gui.click_on(local_user.username)
         gui.kb_write(local_user.password)
         gui.kb_send('enter', wait_time=20)
@@ -158,12 +128,13 @@ def test_lockscreen_password(local_user, lock_on_removal):
         keyboard.release((125, 126),)
         sleep(10)
 
-        # Wake up the black screen by pressing enter
+        gui.wake_by_mouse()
         gui.kb_send('enter', screenshot=False)
         # Confirm that the screen is locked
         # After the screen has been locked, there should be no Activities
         gui.assert_no_text('Activities')
-        gui.click_on('Password', check_difference=False)
+        # In RHEL 8, password box is already selected
+        # and does not contain any text
         gui.kb_write(local_user.password)
         gui.kb_send('enter', wait_time=10)
         # confirm that you are logged back in

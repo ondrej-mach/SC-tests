@@ -160,7 +160,8 @@ def test_login_password_wrong(local_user):
             gui.kb_send('enter', wait_time=20)
 
         gui.assert_no_text('Activities')
-        gui.assert_text('Password')
+        # RHEL8
+        gui.assert_text('Password:')
 
 
 def test_insert_card_prompt(local_user):
@@ -180,9 +181,9 @@ def test_insert_card_prompt(local_user):
         C. GDM shows "insert PIN" prompt
         D. User is logged in successfully.
     """
-    with (Authselect(required=True),
-          local_user.card(insert=False) as card,
-          GUI() as gui):
+    with Authselect(required=True), \
+            local_user.card(insert=False) as card, \
+            GUI() as gui:
         gui.assert_text('insert')
         card.insert()
         sleep(10)
